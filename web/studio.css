@@ -12,7 +12,7 @@
   margin: 12px 0;
 }
 .studio-heading p {
-  color: #a5bbd5;
+  color: #526985;
 }
 .studio-dot {
   color: #39d4c5;
@@ -81,7 +81,7 @@
   display: grid;
   gap: 8px;
   font-size: 0.86rem;
-  color: #c1d1e7;
+  color: #34506b;
 }
 .studio-compose details label {
   margin-top: 16px;
@@ -130,6 +130,16 @@
 }
 .studio-guardrails {
   background: linear-gradient(145deg, #0c2239, #09182c);
+}
+.studio-guardrails h3 {
+  color: #e2f3ff;
+}
+.studio-guardrails .eyebrow,
+.studio-guardrails summary {
+  color: #7de5db;
+}
+.studio-guardrails p {
+  color: #c1d1e7;
 }
 .studio-guardrails li {
   color: #adc2d8;
