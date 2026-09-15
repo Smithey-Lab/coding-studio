@@ -80,14 +80,19 @@ try {
     ),
     1,
   );
+  assert.equal(await page.locator("#studio-panel-response").isVisible(), true);
+  await page.locator("#studio-tab-prompt").click();
   await page.locator("#studio-preview").fill("界".repeat(5334));
   assert.equal(await page.locator("#studio-send").isDisabled(), true);
+  await page.locator("#studio-tab-brief").click();
   await page.locator("#studio-template").selectOption("debug");
   assert.match(
     await page.locator("#studio-preview").inputValue(),
     /root cause/,
   );
+  await page.locator(".studio-settings summary").click();
   await page.locator("#studio-pause").click();
+  await page.locator(".studio-settings summary").click();
   await page.waitForFunction(
     () => document.querySelector("#studio-send").disabled,
   );
@@ -98,6 +103,22 @@ try {
     ),
     true,
   );
+  await page.locator("#studio-compose").click();
+  await page.locator("#studio-tab-prompt").press("ArrowRight");
+  assert.equal(
+    await page.locator("#studio-tab-response").getAttribute("aria-selected"),
+    "true",
+  );
+  await page.locator("#studio-tab-brief").click();
+  await page.locator("#studio-goal").fill("A changed goal");
+  await page.locator("#studio-tab-prompt").click();
+  assert.equal(await page.locator("#studio-send").isDisabled(), true);
+  await page.locator("#studio-rebuild").click();
+  assert.match(
+    await page.locator("#studio-preview").inputValue(),
+    /A changed goal/,
+  );
+  await page.locator("#studio-tab-brief").click();
   await page.locator("#studio-clear").click();
   assert.equal(await page.locator("#studio-preview").inputValue(), "");
   assert.equal(await page.locator("#studio-copy").isDisabled(), true);
