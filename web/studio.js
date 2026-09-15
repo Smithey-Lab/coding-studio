@@ -51,11 +51,44 @@ export function composePrompt(data) {
     .join("\n\n");
 }
 export function mountStudio({ root, api, notify }) {
-  root.innerHTML = `<div class="studio-heading"><div><span class="eyebrow">SMITHEY LAB / OWNER WORKSPACE</span><h1>Coding Studio<span class="studio-dot">.</span></h1><p>Shape the request. Inspect the answer. Build something better.</p></div><a class="action-link" href="/app/">All tools</a></div>
-  <div class="studio-status member-card"><div><span class="studio-indicator"></span><strong id="studio-state">Checking connection…</strong><p id="studio-budget" class="small"></p></div><div class="studio-actions"><button id="studio-refresh" type="button">Refresh status</button><button id="studio-pause" type="button">Pause API</button></div></div>
-  <div class="studio-layout"><section class="member-card studio-compose"><span class="eyebrow">01 / COMPOSE</span><h2>A clear brief starts here.</h2><form id="studio-form"><label>Starting point<select id="studio-template"><option value="build">Build a feature</option><option value="debug">Find a bug</option><option value="review">Review code</option><option value="refactor">Refactor safely</option><option value="tests">Write useful tests</option></select></label><label>What do you want to accomplish?<textarea id="studio-goal" rows="3" maxlength="8000" required></textarea></label><label>Language / stack<input id="studio-stack" maxlength="300" placeholder="TypeScript, React, Node.js…"></label><label>Context / source code<textarea id="studio-context" class="studio-code" rows="8" maxlength="15000" placeholder="Paste the relevant code, error, or requirements."></textarea></label><details open><summary>Prompt controls</summary><label>Constraints<textarea id="studio-constraints" rows="3" maxlength="4000"></textarea></label><label>Expected response<textarea id="studio-output" rows="3" maxlength="2000"></textarea></label></details><div class="studio-actions"><button id="studio-compose" type="button">Build prompt preview</button><button id="studio-save" type="button">Save template to file</button><label class="studio-import">Load template<input id="studio-load" type="file" accept="application/json,.json"></label></div><label>Final prompt · editable<textarea id="studio-preview" class="studio-code" rows="10" maxlength="16000" required></textarea></label><p id="studio-bytes" class="small" aria-live="polite"></p><div class="studio-controls"><label>Output limit<select id="studio-tokens"><option value="512">512 tokens · short</option><option value="1024" selected>1,024 tokens</option><option value="2048">2,048 tokens</option><option value="4096">4,096 tokens · detailed</option></select></label><label>Creativity<select id="studio-temperature"><option value="0">Precise · 0</option><option value="0.3" selected>Balanced · 0.3</option><option value="0.7">Exploratory · 0.7</option></select></label></div><p class="small">Only the final prompt is sent to DeepSeek. Remove passwords, API keys, and private data you do not want to share. Each click sends one independent request.</p><button id="studio-send" class="primary" disabled>Send to DeepSeek</button><p class="small">No automatic retries. A started attempt reserves $0.05, including failures. Limits reset at midnight UTC.</p></form></section>
-  <aside class="studio-results"><section class="member-card"><span class="eyebrow">02 / RESPONSE</span><div class="studio-result-heading"><h2>From brief to code.</h2><span class="badge">DEEPSEEK FLASH</span></div><p id="studio-result-meta" class="small" aria-live="polite">Your answer will appear here. Nothing is sent until you choose Send.</p><pre id="studio-answer" class="studio-answer" tabindex="0">Start with a template on the left, add your context, then review the final prompt.</pre><div class="studio-actions"><button id="studio-copy" disabled>Copy answer</button><button id="studio-download" disabled>Download answer</button><button id="studio-clear">Clear workspace</button></div></section><section class="member-card studio-guardrails"><span class="eyebrow">PRIVATE BY DESIGN</span><h3>Your access. Bounded usage.</h3><ul><li>Your owner identity and authenticator login are required.</li><li>The API key stays in AWS Secrets Manager.</li><li>One request per minute; 20 per day, 100 per month, 400 lifetime.</li><li>Prompts and answers remain in this page until you clear, reload, or leave. They are not saved on our server.</li><li>Generated code is displayed as text. Review it before running it.</li></ul><details><summary>Connect your key · final setup</summary><p>After deployment, add a JSON field named <code>apiKey</code> to the Coding Studio secret in AWS Secrets Manager. For the initial deployment, refresh status after saving the key. If you previously paused the API, use the repository’s activation script to resume. The browser never receives or stores the key.</p><p>Keep a small provider balance and review current pricing before activation. The allowance is a conservative reservation, not a provider invoice or a cap on AWS hosting costs.</p></details></section></aside></div>`;
+  root.classList.add("coding-workspace");
+  document.body.classList.add("studio-page");
+  root.innerHTML = `<header class="studio-heading"><div><div class="studio-kicker">PRIVATE WORKSPACE <span> / </span> DEVELOPMENT</div><h1>Coding Studio<span class="studio-dot">.</span></h1><p>A focused space to turn an idea into a precise request.</p></div><div class="studio-heading-actions"><span class="studio-owner">Owner access</span><a class="action-link" href="/app/">← All tools</a></div></header>
+  <div class="studio-status"><div class="studio-connection"><span class="studio-indicator"></span><strong id="studio-state">Checking connection…</strong></div><p id="studio-budget"></p><button id="studio-refresh" type="button">Refresh</button><details class="studio-settings"><summary>Settings</summary><div><h3>Request protection</h3><p>One request per minute. Up to 20 daily and 100 monthly. Every attempt reserves $0.05, including failures.</p><button id="studio-pause" type="button">Pause API access</button><h3>Connect your key</h3><p>Add your dedicated key as the <code>apiKey</code> field in the AWS Secrets Manager secret for Coding Studio. Refresh status after saving. The key never reaches this browser.</p></div></details></div>
+  <div class="studio-shell"><nav class="studio-tabs" role="tablist" aria-label="Coding Studio views"><button id="studio-tab-brief" role="tab" aria-selected="true" aria-controls="studio-panel-brief" type="button"><span>01</span> Brief</button><button id="studio-tab-prompt" role="tab" aria-selected="false" aria-controls="studio-panel-prompt" type="button"><span>02</span> Prompt preview</button><button id="studio-tab-response" role="tab" aria-selected="false" aria-controls="studio-panel-response" type="button"><span>03</span> Response</button><span class="studio-local">Session only · nothing saved automatically</span></nav>
+  <form id="studio-form" novalidate><section id="studio-panel-brief" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-brief"><div class="studio-section-heading"><div><h2>What are we building?</h2><p>Start with a task, add the relevant context, and define a useful answer.</p></div><div class="studio-actions"><button id="studio-save" type="button">Export brief</button><label class="studio-import" for="studio-load">Import brief<input id="studio-load" type="file" accept="application/json,.json"></label><button id="studio-clear" type="button">Clear</button></div></div>
+  <div class="studio-brief-grid"><div class="studio-brief-fields"><label>Task<select id="studio-template"><option value="build">Build a feature</option><option value="debug">Find a bug</option><option value="review">Review code</option><option value="refactor">Refactor safely</option><option value="tests">Write useful tests</option></select></label><label>Your goal<textarea id="studio-goal" rows="5" maxlength="8000" placeholder="Describe what should happen and what a good result looks like."></textarea></label><label>Language &amp; stack<input id="studio-stack" maxlength="300" placeholder="e.g. TypeScript, React, AWS Lambda"></label><details class="studio-instructions"><summary>Instructions &amp; output format <span>Customize the template</span></summary><label>Constraints<textarea id="studio-constraints" rows="3" maxlength="4000"></textarea></label><label>Expected response<textarea id="studio-output" rows="3" maxlength="2000"></textarea></label></details></div><div class="studio-context-field"><div class="studio-editor-heading"><label for="studio-context">Context &amp; source code</label><span>Plain text</span></div><textarea id="studio-context" class="studio-code" rows="15" maxlength="15000" spellcheck="false" placeholder="// Paste the relevant code, error output, or requirements here.
+
+A little context goes a long way. Include the current behavior, expected behavior, and anything the solution needs to preserve."></textarea><p class="studio-field-help">Include only what the task needs. Remove credentials and private data before sending.</p></div></div><div class="studio-panel-footer"><p id="studio-draft-state">Your brief stays in this tab.</p><button id="studio-compose" class="primary" type="button">Review prompt <span aria-hidden="true">→</span></button></div></section>
+  <section id="studio-panel-prompt" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-prompt" hidden><div class="studio-section-heading"><div><h2>Review the exact request.</h2><p>Edit freely. This is the prompt DeepSeek will receive.</p></div><button id="studio-rebuild" type="button">Rebuild from brief</button></div><label class="studio-sr-only" for="studio-preview">Final prompt</label><div class="studio-editor-heading"><span>prompt.md</span><span id="studio-bytes" aria-live="polite"></span></div><textarea id="studio-preview" class="studio-code studio-preview" rows="19" maxlength="16000" spellcheck="false"></textarea><div class="studio-sendbar"><div class="studio-controls"><label>Output length<select id="studio-tokens"><option value="512">Short · 512 tokens</option><option value="1024" selected>Standard · 1,024 tokens</option><option value="2048">Extended · 2,048 tokens</option><option value="4096">Detailed · 4,096 tokens</option></select></label><label>Creativity<select id="studio-temperature"><option value="0">Precise</option><option value="0.3" selected>Balanced</option><option value="0.7">Exploratory</option></select></label></div><div class="studio-send-action"><span>DeepSeek Flash · $0.05 reserved per attempt</span><button id="studio-send" class="primary" disabled>Send to DeepSeek</button></div></div><p class="studio-field-help">Each submission is independent. No automatic retries. Review generated code before running it.</p></section></form>
+  <section id="studio-panel-response" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-response" hidden><div class="studio-section-heading"><div><h2>Your response.</h2><p id="studio-result-meta" aria-live="polite">Ready when you are. Review a prompt to get started.</p></div><div class="studio-actions"><button id="studio-copy" type="button" disabled>Copy answer</button><button id="studio-download" type="button" disabled>Download .md</button></div></div><div class="studio-editor-heading"><span>response.md</span><span>DEEPSEEK FLASH</span></div><div id="studio-empty" class="studio-empty"><span class="studio-empty-symbol" aria-hidden="true">&lt;/&gt;</span><h3>Room for your next idea.</h3><p>Build a brief, review the prompt, and your answer will appear here.</p><button id="studio-back" type="button">Back to brief</button></div><pre id="studio-answer" class="studio-answer" tabindex="0" hidden></pre></section></div>
+  <footer class="studio-bottom"><span><span class="studio-lock" aria-hidden="true">●</span> Owner only · MFA protected</span><span>Prompts are sent only when you choose Send. The API key stays in AWS.</span></footer>`;
   const el = (id) => root.querySelector("#studio-" + id);
+  let dirty = false;
+  const views = ["brief", "prompt", "response"];
+  function show(view) {
+    for (const name of views) {
+      el("panel-" + name).hidden = name !== view;
+      el("tab-" + name).setAttribute("aria-selected", String(name === view));
+      el("tab-" + name).tabIndex = name === view ? 0 : -1;
+    }
+  }
+  for (const [index, view] of views.entries()) {
+    el("tab-" + view).addEventListener("click", () => show(view));
+    el("tab-" + view).addEventListener("keydown", (e) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+      e.preventDefault();
+      const next =
+        e.key === "Home"
+          ? 0
+          : e.key === "End"
+            ? 2
+            : (index + (e.key === "ArrowRight" ? 1 : 2)) % 3;
+      show(views[next]);
+      el("tab-" + views[next]).focus();
+    });
+  }
+  el("back").addEventListener("click", () => show("brief"));
   let ready = false,
     busy = false,
     answer = "";
@@ -63,13 +96,16 @@ export function mountStudio({ root, api, notify }) {
   const read = () => Object.fromEntries(fields.map((k) => [k, el(k).value]));
   const bytes = () => new TextEncoder().encode(el("preview").value).byteLength;
   const update = () => {
+    root.dataset.connected = String(ready);
     el("bytes").textContent =
       `${bytes().toLocaleString()} / 16,000 UTF-8 bytes`;
     el("send").disabled =
-      busy || !ready || !el("preview").value.trim() || bytes() > 16000;
+      busy || dirty || !ready || !el("preview").value.trim() || bytes() > 16000;
   };
   const compose = () => {
     el("preview").value = composePrompt(read());
+    dirty = false;
+    el("draft-state").textContent = "Prompt updated from your brief.";
     update();
   };
   const apply = () => {
@@ -110,12 +146,19 @@ export function mountStudio({ root, api, notify }) {
     update();
   }
   el("template").addEventListener("change", apply);
-  el("compose").addEventListener("click", compose);
+  el("compose").addEventListener("click", () => {
+    compose();
+    show("prompt");
+  });
+  el("rebuild").addEventListener("click", compose);
   el("preview").addEventListener("input", update);
   for (const k of fields)
     el(k).addEventListener("input", () => {
-      el("bytes").textContent =
-        "Brief changed. Choose Build prompt preview to include these changes.";
+      dirty = true;
+      el("draft-state").textContent =
+        "Brief changed · review to update your prompt.";
+      el("bytes").textContent = "Brief changed · rebuild to include changes.";
+      update();
     });
   el("refresh").addEventListener("click", refresh);
   el("pause").addEventListener("click", async () => {
@@ -161,8 +204,22 @@ export function mountStudio({ root, api, notify }) {
   });
   el("form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (busy || !ready || bytes() > 16000) return;
+    if (
+      busy ||
+      dirty ||
+      !ready ||
+      !el("preview").value.trim() ||
+      bytes() > 16000
+    )
+      return;
     busy = true;
+    show("response");
+    el("empty").hidden = true;
+    el("answer").hidden = false;
+    el("answer").textContent = "Working on your request…";
+    answer = "";
+    el("copy").disabled = true;
+    el("download").disabled = true;
     update();
     el("send").textContent = "Waiting for DeepSeek…";
     el("result-meta").textContent =
@@ -182,6 +239,8 @@ export function mountStudio({ root, api, notify }) {
       el("copy").disabled = false;
       el("download").disabled = false;
     } catch (e) {
+      el("answer").textContent =
+        "No complete answer was received. Review the message above before trying again.";
       el("result-meta").textContent = e.message;
       notify(e.message, true);
     } finally {
@@ -209,6 +268,11 @@ export function mountStudio({ root, api, notify }) {
     for (const k of fields) el(k).value = "";
     el("preview").value = "";
     answer = "";
+    dirty = false;
+    el("empty").hidden = false;
+    el("answer").hidden = true;
+    show("brief");
+    el("draft-state").textContent = "Workspace cleared.";
     el("answer").textContent = "Workspace cleared.";
     el("result-meta").textContent = "No saved response.";
     el("copy").disabled = true;
