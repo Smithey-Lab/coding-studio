@@ -97,8 +97,9 @@ A little context goes a long way. Include the current behavior, expected behavio
   const bytes = () => new TextEncoder().encode(el("preview").value).byteLength;
   const update = () => {
     root.dataset.connected = String(ready);
-    el("bytes").textContent =
-      `${bytes().toLocaleString()} / 16,000 UTF-8 bytes`;
+    el("bytes").textContent = dirty
+      ? "Brief changed · rebuild to include your edits."
+      : `${bytes().toLocaleString()} / 16,000 UTF-8 bytes`;
     el("send").disabled =
       busy || dirty || !ready || !el("preview").value.trim() || bytes() > 16000;
   };
