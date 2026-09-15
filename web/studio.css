@@ -1,4 +1,4 @@
-/* The studio owns its full viewport; other member pages retain their layout. */
+/* Match the member area's content width, with one stacked workspace. */
 body.studio-page {
   background: #f3f6fa;
   --studio-border: #dce5ee;
@@ -7,8 +7,7 @@ body.studio-page {
 .studio-page .member-header,
 .studio-page .member-main,
 .studio-page .member-footer {
-  width: calc(100% - 80px);
-  max-width: none;
+  width: min(1180px, calc(100% - 48px));
 }
 .studio-page .member-header {
   min-height: 82px;
@@ -243,7 +242,7 @@ body.studio-page {
 }
 .studio-brief-grid {
   display: grid;
-  grid-template-columns: minmax(270px, 0.7fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 32px;
 }
 .studio-brief-fields {
@@ -472,16 +471,11 @@ body.studio-page {
   outline: 2px solid #168cba;
   outline-offset: 3px;
 }
-@media (min-width: 1800px) {
-  .studio-brief-grid {
-    grid-template-columns: minmax(350px, 0.55fr) minmax(0, 1.5fr);
-  }
-}
 @media (max-width: 1000px) {
   .studio-page .member-header,
   .studio-page .member-main,
   .studio-page .member-footer {
-    width: calc(100% - 40px);
+    width: min(1180px, calc(100% - 48px));
   }
   .studio-local {
     display: none;
@@ -491,7 +485,7 @@ body.studio-page {
   }
   .studio-brief-grid {
     gap: 22px;
-    grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .studio-status {
     gap: 12px;
@@ -510,7 +504,12 @@ body.studio-page {
     flex: 1;
   }
 }
-@media (max-width: 700px) {
+@media (max-width: 750px) {
+  .studio-page .member-header,
+  .studio-page .member-main,
+  .studio-page .member-footer {
+    width: calc(100% - 32px);
+  }
   .studio-page .member-header {
     min-height: 0;
     padding: 16px 0;
