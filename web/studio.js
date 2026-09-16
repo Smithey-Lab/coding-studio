@@ -1,285 +1,235 @@
-export const templates = {
-  build: {
-    title: "Build a feature",
-    goal: "Implement the feature described below.",
-    constraints:
-      "Keep the change focused. Validate inputs, handle errors, and preserve existing behavior.",
-    output:
-      "Give a short plan, code grouped by file, and steps to verify the change.",
-  },
-  debug: {
-    title: "Find a bug",
-    goal: "Find the root cause of this failure and propose a minimal fix.",
-    constraints:
-      "Separate evidence from assumptions. Do not invent logs or claim to run tests.",
-    output: "Explain the root cause, show the fix, and give a regression test.",
-  },
-  review: {
-    title: "Review code",
-    goal: "Review this code for correctness, security, and maintainability.",
-    constraints:
-      "Prioritize concrete defects. Explain the trigger and impact of each finding.",
-    output:
-      "List findings by severity with relevant code references and suggested fixes.",
-  },
-  refactor: {
-    title: "Refactor safely",
-    goal: "Simplify this implementation while preserving its behavior.",
-    constraints:
-      "Preserve interfaces and error handling. Explain any behavior changes explicitly.",
-    output: "Show the revised code, tradeoffs, and relevant regression checks.",
-  },
-  tests: {
-    title: "Write useful tests",
-    goal: "Design tests for the supplied implementation.",
-    constraints:
-      "Focus on boundaries, failure modes, and user-visible behavior. Use the existing test framework.",
-    output:
-      "Provide runnable tests, setup instructions, and remaining coverage gaps.",
-  },
-};
-export function composePrompt(data) {
-  return [
-    ["Goal", data.goal],
-    ["Language / stack", data.stack],
-    ["Context / source code", data.context],
-    ["Constraints", data.constraints],
-    ["Expected response", data.output],
-  ]
-    .filter(([, v]) => v?.trim())
-    .map(([k, v]) => `## ${k}\n${v.trim()}`)
-    .join("\n\n");
-}
 export function mountStudio({ root, api, notify }) {
-  root.classList.add("coding-workspace");
   document.body.classList.add("studio-page");
-  root.innerHTML = `<header class="studio-heading"><div><div class="studio-kicker">PRIVATE WORKSPACE <span> / </span> DEVELOPMENT</div><h1>Coding Studio<span class="studio-dot">.</span></h1><p>A focused space to turn an idea into a precise request.</p></div><div class="studio-heading-actions"><span class="studio-owner">Owner access</span><a class="action-link" href="/app/">← All tools</a></div></header>
-  <div class="studio-status"><div class="studio-connection"><span class="studio-indicator"></span><strong id="studio-state">Checking connection…</strong></div><p id="studio-budget"></p><button id="studio-refresh" type="button">Refresh</button><details class="studio-settings"><summary>Settings</summary><div><h3>Request protection</h3><p>One request per minute. Up to 20 daily and 100 monthly. Every attempt reserves $0.05, including failures.</p><button id="studio-pause" type="button">Pause API access</button><h3>Connect your key</h3><p>Add your dedicated key as the <code>apiKey</code> field in the AWS Secrets Manager secret for Coding Studio. Refresh status after saving. The key never reaches this browser.</p></div></details></div>
-  <div class="studio-shell"><nav class="studio-tabs" role="tablist" aria-label="Coding Studio views"><button id="studio-tab-brief" role="tab" aria-selected="true" aria-controls="studio-panel-brief" type="button"><span>01</span> Brief</button><button id="studio-tab-prompt" role="tab" aria-selected="false" aria-controls="studio-panel-prompt" type="button"><span>02</span> Prompt preview</button><button id="studio-tab-response" role="tab" aria-selected="false" aria-controls="studio-panel-response" type="button"><span>03</span> Response</button><span class="studio-local">Session only · nothing saved automatically</span></nav>
-  <form id="studio-form" novalidate><section id="studio-panel-brief" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-brief"><div class="studio-section-heading"><div><h2>What are we building?</h2><p>Start with a task, add the relevant context, and define a useful answer.</p></div><div class="studio-actions"><button id="studio-save" type="button">Export brief</button><label class="studio-import" for="studio-load">Import brief<input id="studio-load" type="file" accept="application/json,.json"></label><button id="studio-clear" type="button">Clear</button></div></div>
-  <div class="studio-brief-grid"><div class="studio-brief-fields"><label>Task<select id="studio-template"><option value="build">Build a feature</option><option value="debug">Find a bug</option><option value="review">Review code</option><option value="refactor">Refactor safely</option><option value="tests">Write useful tests</option></select></label><label>Your goal<textarea id="studio-goal" rows="5" maxlength="8000" placeholder="Describe what should happen and what a good result looks like."></textarea></label><label>Language &amp; stack<input id="studio-stack" maxlength="300" placeholder="e.g. TypeScript, React, AWS Lambda"></label><details class="studio-instructions"><summary>Instructions &amp; output format <span>Customize the template</span></summary><label>Constraints<textarea id="studio-constraints" rows="3" maxlength="4000"></textarea></label><label>Expected response<textarea id="studio-output" rows="3" maxlength="2000"></textarea></label></details></div><div class="studio-context-field"><div class="studio-editor-heading"><label for="studio-context">Context &amp; source code</label><span>Plain text</span></div><textarea id="studio-context" class="studio-code" rows="15" maxlength="15000" spellcheck="false" placeholder="// Paste the relevant code, error output, or requirements here.
-
-A little context goes a long way. Include the current behavior, expected behavior, and anything the solution needs to preserve."></textarea><p class="studio-field-help">Include only what the task needs. Remove credentials and private data before sending.</p></div></div><div class="studio-panel-footer"><p id="studio-draft-state">Your brief stays in this tab.</p><button id="studio-compose" class="primary" type="button">Review prompt <span aria-hidden="true">→</span></button></div></section>
-  <section id="studio-panel-prompt" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-prompt" hidden><div class="studio-section-heading"><div><h2>Review the exact request.</h2><p>Edit freely. This is the prompt DeepSeek will receive.</p></div><button id="studio-rebuild" type="button">Rebuild from brief</button></div><label class="studio-sr-only" for="studio-preview">Final prompt</label><div class="studio-editor-heading"><span>prompt.md</span><span id="studio-bytes" aria-live="polite"></span></div><textarea id="studio-preview" class="studio-code studio-preview" rows="19" maxlength="16000" spellcheck="false"></textarea><div class="studio-sendbar"><div class="studio-controls"><label>Output length<select id="studio-tokens"><option value="512">Short · 512 tokens</option><option value="1024" selected>Standard · 1,024 tokens</option><option value="2048">Extended · 2,048 tokens</option><option value="4096">Detailed · 4,096 tokens</option></select></label><label>Creativity<select id="studio-temperature"><option value="0">Precise</option><option value="0.3" selected>Balanced</option><option value="0.7">Exploratory</option></select></label></div><div class="studio-send-action"><span>DeepSeek Flash · $0.05 reserved per attempt</span><button id="studio-send" class="primary" disabled>Send to DeepSeek</button></div></div><p class="studio-field-help">Each submission is independent. No automatic retries. Review generated code before running it.</p></section></form>
-  <section id="studio-panel-response" class="studio-panel" role="tabpanel" aria-labelledby="studio-tab-response" hidden><div class="studio-section-heading"><div><h2>Your response.</h2><p id="studio-result-meta" aria-live="polite">Ready when you are. Review a prompt to get started.</p></div><div class="studio-actions"><button id="studio-copy" type="button" disabled>Copy answer</button><button id="studio-download" type="button" disabled>Download .md</button></div></div><div class="studio-editor-heading"><span>response.md</span><span>DEEPSEEK FLASH</span></div><div id="studio-empty" class="studio-empty"><span class="studio-empty-symbol" aria-hidden="true">&lt;/&gt;</span><h3>Room for your next idea.</h3><p>Build a brief, review the prompt, and your answer will appear here.</p><button id="studio-back" type="button">Back to brief</button></div><pre id="studio-answer" class="studio-answer" tabindex="0" hidden></pre></section></div>
-  <footer class="studio-bottom"><span><span class="studio-lock" aria-hidden="true">●</span> Owner only · MFA protected</span><span>Prompts are sent only when you choose Send. The API key stays in AWS.</span></footer>`;
+  root.classList.add("coding-workspace");
+  root.innerHTML = `<header class="chat-heading"><div><p class="chat-eyebrow">SMITHEY LAB / PRIVATE WORKSPACE</p><h1>Coding Studio<span>.</span></h1><p>Your ideas. A conversation. Better code.</p></div><a href="/app/" class="action-link">All tools ↗</a></header>
+  <section class="chat-shell" aria-label="DeepSeek chat"><div class="chat-toolbar"><div><span class="chat-dot" aria-hidden="true"></span><strong>DeepSeek Flash</strong><span id="studio-state" role="status">Checking connection…</span></div><div class="chat-actions"><button id="studio-new" type="button">New chat</button><button id="studio-export" type="button" disabled>Export</button><details class="chat-settings"><summary>Settings</summary><div><h2>Chat settings</h2><label>Response length<select id="studio-tokens"><option value="512">Short · 512 tokens</option><option value="1024">Standard · 1,024 tokens</option><option value="2048" selected>Extended · 2,048 tokens</option><option value="4096">Detailed · 4,096 tokens</option></select></label><label>Style<select id="studio-temperature"><option value="0">Precise</option><option value="0.3" selected>Balanced</option><option value="0.7">Creative</option></select></label><p id="studio-budget"></p><p>Each attempt reserves $0.05. One request per minute. Failed attempts are not retried automatically.</p><button id="studio-refresh" type="button">Refresh connection</button><button id="studio-pause" type="button">Pause API access</button><h3>Connect DeepSeek</h3><p>Save your key in the Coding Studio AWS Secrets Manager secret as <code>apiKey</code>, then refresh. Your key never reaches this browser.</p></div></details></div></div>
+  <div id="studio-scroll" class="chat-scroll"><div id="studio-empty" class="chat-empty"><div class="chat-symbol" aria-hidden="true">&lt;/&gt;</div><p class="chat-eyebrow">LET’S MAKE SOMETHING</p><h2>What are you working on?</h2><p>Ask a question, paste some code, or describe what you want to build.</p><div class="chat-starters"><button type="button" data-starter="Help me build a feature. Here is what I want it to do:\n">Build something <span>Turn an idea into code ↗</span></button><button type="button" data-starter="Help me debug this. Expected behavior, actual behavior, and code:\n">Find a bug <span>Work through a problem ↗</span></button><button type="button" data-starter="Review this code for correctness and security:\n">Review my code <span>Get a second set of eyes ↗</span></button></div></div><div id="studio-messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions"></div><p id="studio-working" class="chat-working" role="status" hidden>DeepSeek is working on your reply…</p></div>
+  <form id="studio-form" class="chat-composer"><label class="chat-sr-only" for="studio-input">Message DeepSeek</label><textarea id="studio-input" rows="3" maxlength="16000" placeholder="Ask DeepSeek anything about your code…" spellcheck="false"></textarea><div class="chat-compose-footer"><span id="studio-context">0 / 16,000 context bytes</span><button id="studio-send" class="primary" disabled>Send ↑</button></div><p id="studio-feedback" role="status"></p></form></section><footer class="chat-footer"><span>Owner only · Key protected in AWS</span><span>Enter to send · Shift + Enter for a new line</span></footer><p class="chat-privacy">Chat stays in this tab until you leave or start a new chat. Each message sends the conversation to DeepSeek. Generated code is not run.</p>`;
   const el = (id) => root.querySelector("#studio-" + id);
-  let dirty = false;
-  const views = ["brief", "prompt", "response"];
-  function show(view) {
-    for (const name of views) {
-      el("panel-" + name).hidden = name !== view;
-      el("tab-" + name).setAttribute("aria-selected", String(name === view));
-      el("tab-" + name).tabIndex = name === view ? 0 : -1;
+  let messages = [],
+    ready = false,
+    busy = false,
+    cooldown = 0;
+  const encoder = new TextEncoder();
+  const bytes = (text) => encoder.encode(text).byteLength;
+  function update() {
+    const total =
+      messages.reduce((n, m) => n + bytes(m.content), 0) +
+      bytes(el("input").value);
+    const remaining = Math.max(0, Math.ceil((cooldown - Date.now()) / 1000));
+    const tooLong = total > 16000 || messages.length >= 21;
+    el("context").textContent =
+      `${total.toLocaleString()} / 16,000 context bytes`;
+    el("send").disabled =
+      !ready || busy || remaining > 0 || tooLong || !el("input").value.trim();
+    el("send").textContent = busy
+      ? "Waiting…"
+      : remaining
+        ? `Wait ${remaining}s`
+        : "Send ↑";
+    el("new").disabled = busy;
+    el("export").disabled = busy || !messages.length;
+    el("input").disabled = busy;
+    if (tooLong)
+      el("feedback").textContent =
+        "Context limit reached. Export this conversation and start a new chat, or shorten your message.";
+    else if (el("feedback").textContent.startsWith("Context limit"))
+      el("feedback").textContent = "";
+  }
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      notify("Copied.");
+    } catch {
+      notify("Copy unavailable. Select the text and copy it manually.", true);
     }
   }
-  for (const [index, view] of views.entries()) {
-    el("tab-" + view).addEventListener("click", () => show(view));
-    el("tab-" + view).addEventListener("keydown", (e) => {
-      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-      e.preventDefault();
-      const next =
-        e.key === "Home"
-          ? 0
-          : e.key === "End"
-            ? 2
-            : (index + (e.key === "ArrowRight" ? 1 : 2)) % 3;
-      show(views[next]);
-      el("tab-" + views[next]).focus();
-    });
+  function append(message, truncated = false) {
+    el("empty").hidden = true;
+    const row = document.createElement("article");
+    row.className = "chat-message " + message.role;
+    const heading = document.createElement("div");
+    heading.className = "chat-message-heading";
+    const name = document.createElement("strong");
+    name.textContent = message.role === "user" ? "You" : "DeepSeek";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Copy";
+    button.setAttribute("aria-label", `Copy ${name.textContent} message`);
+    button.onclick = () => copy(message.content);
+    heading.append(name, button);
+    row.append(heading);
+    // Only create text nodes. Provider HTML, links and fenced code never execute.
+    const parts =
+      message.role === "assistant"
+        ? message.content.split(/```([^\n`]*)\n([\s\S]*?)(?:```|$)/g)
+        : [message.content];
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 3 === 1) {
+        const block = document.createElement("div");
+        block.className = "chat-code";
+        const bar = document.createElement("div");
+        bar.className = "chat-code-heading";
+        const label = document.createElement("span");
+        label.textContent = parts[i].trim() || "Code";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = "Copy code";
+        const code = parts[++i];
+        b.onclick = () => copy(code);
+        const pre = document.createElement("pre");
+        const content = document.createElement("code");
+        content.textContent = code;
+        pre.append(content);
+        bar.append(label, b);
+        block.append(bar, pre);
+        row.append(block);
+      } else if (parts[i]) {
+        const p = document.createElement("div");
+        p.className = "chat-text";
+        p.textContent = parts[i];
+        row.append(p);
+      }
+    }
+    if (truncated) {
+      const p = document.createElement("p");
+      p.className = "chat-warning";
+      p.textContent =
+        "Response reached the output limit and may be incomplete. Ask DeepSeek to continue.";
+      row.append(p);
+    }
+    el("messages").append(row);
+    el("scroll").scrollTop = el("scroll").scrollHeight;
   }
-  el("back").addEventListener("click", () => show("brief"));
-  let ready = false,
-    busy = false,
-    answer = "";
-  const fields = ["goal", "stack", "context", "constraints", "output"];
-  const read = () => Object.fromEntries(fields.map((k) => [k, el(k).value]));
-  const bytes = () => new TextEncoder().encode(el("preview").value).byteLength;
-  const update = () => {
-    root.dataset.connected = String(ready);
-    el("bytes").textContent = dirty
-      ? "Brief changed · rebuild to include your edits."
-      : `${bytes().toLocaleString()} / 16,000 UTF-8 bytes`;
-    el("send").disabled =
-      busy || dirty || !ready || !el("preview").value.trim() || bytes() > 16000;
-  };
-  const compose = () => {
-    el("preview").value = composePrompt(read());
-    dirty = false;
-    el("draft-state").textContent = "Prompt updated from your brief.";
-    update();
-  };
-  const apply = () => {
-    const t = templates[el("template").value];
-    for (const k of ["goal", "constraints", "output"]) el(k).value = t[k];
-    compose();
-  };
-  const download = (name, text, type) => {
-    const url = URL.createObjectURL(new Blob([text], { type }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
   async function refresh() {
     ready = false;
     update();
     try {
       const s = await api("studio", { operation: "status" });
-      ready = s.enabled && s.configured;
-      el("state").textContent = ready
-        ? "Connected · owner only"
-        : s.configured
-          ? "Paused · key configured"
-          : "Awaiting API key · requests disabled";
-      const used = s.usedCents;
+      ready =
+        s.enabled &&
+        s.configured &&
+        s.usedCents.daily < 100 &&
+        s.usedCents.monthly < 500 &&
+        s.usedCents.lifetime < 2000;
+      el("state").textContent = !s.configured
+        ? "Awaiting API key"
+        : !s.enabled
+          ? "Paused"
+          : ready
+            ? "Ready to chat"
+            : "Allowance reached";
       el("budget").textContent =
-        `Reserved allowance: $${(used.daily / 100).toFixed(2)} / $1 today · $${(used.monthly / 100).toFixed(2)} / $5 this month · $${(used.lifetime / 100).toFixed(2)} / $20 lifetime`;
-      if (used.daily >= 100 || used.monthly >= 500 || used.lifetime >= 2000) {
-        ready = false;
-        el("state").textContent = "Allowance reached · requests blocked";
-      }
+        `Reserved allowance: $${(s.usedCents.daily / 100).toFixed(2)} / $1 today · $${(s.usedCents.monthly / 100).toFixed(2)} / $5 this month · $${(s.usedCents.lifetime / 100).toFixed(2)} / $20 lifetime.`;
     } catch (e) {
-      el("state").textContent = "Connection unavailable · requests disabled";
+      el("state").textContent = "Connection unavailable";
       notify(e.message, true);
     }
+    root.dataset.connected = String(ready);
     update();
   }
-  el("template").addEventListener("change", apply);
-  el("compose").addEventListener("click", () => {
-    compose();
-    show("prompt");
+  el("input").addEventListener("input", update);
+  el("input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      if (!el("send").disabled) el("form").requestSubmit();
+    }
   });
-  el("rebuild").addEventListener("click", compose);
-  el("preview").addEventListener("input", update);
-  for (const k of fields)
-    el(k).addEventListener("input", () => {
-      dirty = true;
-      el("draft-state").textContent =
-        "Brief changed · review to update your prompt.";
-      el("bytes").textContent = "Brief changed · rebuild to include changes.";
+  root.querySelectorAll("[data-starter]").forEach((button) =>
+    button.addEventListener("click", () => {
+      el("input").value = button.dataset.starter;
+      el("input").focus();
       update();
-    });
+    }),
+  );
+  el("new").addEventListener("click", () => {
+    if (
+      busy ||
+      (messages.length &&
+        !window.confirm(
+          "Start a new chat? Export first if you want to keep this conversation.",
+        ))
+    )
+      return;
+    messages = [];
+    el("messages").replaceChildren();
+    el("empty").hidden = false;
+    el("input").value = "";
+    el("feedback").textContent = "";
+    update();
+    el("input").focus();
+  });
+  el("export").addEventListener("click", () => {
+    const text = messages
+      .map(
+        (m) => `## ${m.role === "user" ? "You" : "DeepSeek"}\n\n${m.content}`,
+      )
+      .join("\n\n---\n\n");
+    const url = URL.createObjectURL(
+      new Blob([text], { type: "text/markdown" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "deepseek-chat.md";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
   el("refresh").addEventListener("click", refresh);
   el("pause").addEventListener("click", async () => {
     try {
       await api("studio", { operation: "pause" });
       notify(
-        "Coding Studio paused. An already admitted request may still complete.",
+        "API access paused. An already admitted request may still finish.",
       );
       await refresh();
     } catch (e) {
       notify(e.message, true);
     }
   });
-  el("save").addEventListener("click", () =>
-    download(
-      "coding-studio-template.json",
-      JSON.stringify({ version: 1, ...read() }, null, 2),
-      "application/json",
-    ),
-  );
-  el("load").addEventListener("change", async (e) => {
-    try {
-      const file = e.target.files[0];
-      if (!file) return;
-      if (file.size > 24000) throw new Error("Template file is too large.");
-      const data = JSON.parse(await file.text());
-      if (
-        data.version !== 1 ||
-        fields.some(
-          (k) =>
-            typeof data[k] !== "string" || data[k].length > el(k).maxLength,
-        )
-      )
-        throw new Error("Invalid template format.");
-      for (const k of fields) el(k).value = data[k];
-      compose();
-      notify("Template loaded locally.");
-    } catch (e) {
-      notify(e.message, true);
-    } finally {
-      el("load").value = "";
-    }
-  });
   el("form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (
-      busy ||
-      dirty ||
-      !ready ||
-      !el("preview").value.trim() ||
-      bytes() > 16000
-    )
+    update();
+    if (el("send").disabled) return;
+    const message = { role: "user", content: el("input").value.trim() };
+    const input = {
+      operation: "generate",
+      messages: [...messages, message],
+      requestId: crypto.randomUUID(),
+      maxTokens: Number(el("tokens").value),
+      temperature: Number(el("temperature").value),
+    };
+    if (bytes(JSON.stringify({ action: "studio", ...input })) > 39000) {
+      el("feedback").textContent =
+        "This message contains too many escaped characters. Shorten it before sending.";
       return;
+    }
     busy = true;
-    show("response");
-    el("empty").hidden = true;
-    el("answer").hidden = false;
-    el("answer").textContent = "Working on your request…";
-    answer = "";
-    el("copy").disabled = true;
-    el("download").disabled = true;
+    el("feedback").textContent = "";
+    append(message);
+    el("working").hidden = false;
     update();
-    el("send").textContent = "Waiting for DeepSeek…";
-    el("result-meta").textContent =
-      "Request in progress. Please keep this page open.";
     try {
-      const r = await api("studio", {
-        operation: "generate",
-        requestId: crypto.randomUUID(),
-        prompt: el("preview").value,
-        maxTokens: Number(el("tokens").value),
-        temperature: Number(el("temperature").value),
-      });
-      answer = r.content;
-      el("answer").textContent = answer;
-      el("result-meta").textContent =
-        `${r.model} · ${r.usage.inputTokens ?? "Unknown"} input / ${r.usage.outputTokens ?? "unknown"} output tokens · $0.05 reserved${r.finishReason === "length" ? " · Output limit reached; response is incomplete." : ""}`;
-      el("copy").disabled = false;
-      el("download").disabled = false;
-    } catch (e) {
-      el("answer").textContent =
-        "No complete answer was received. Review the message above before trying again.";
-      el("result-meta").textContent = e.message;
-      notify(e.message, true);
+      const result = await api("studio", input);
+      messages.push(message, { role: "assistant", content: result.content });
+      append(messages.at(-1), result.finishReason === "length");
+      el("input").value = "";
+    } catch (error) {
+      // Failed turns stay out of future context. Never silently resend a paid attempt.
+      el("messages").lastElementChild?.remove();
+      el("empty").hidden = messages.length > 0;
+      el("feedback").textContent =
+        `${error.message} Your message is still in the editor. No automatic retry was made.`;
     } finally {
+      cooldown = Date.now() + 60000;
       busy = false;
-      el("send").textContent = "Send to DeepSeek";
+      el("working").hidden = true;
       await refresh();
+      el("input").focus();
+      const timer = setInterval(() => {
+        if (!root.isConnected || Date.now() >= cooldown) clearInterval(timer);
+        if (root.isConnected) update();
+      }, 1000);
     }
   });
-  el("copy").addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(answer);
-      notify("Answer copied.");
-    } catch {
-      notify("Clipboard unavailable. Select the response to copy it.", true);
-    }
-  });
-  el("download").addEventListener("click", () =>
-    download("coding-studio-answer.md", answer, "text/markdown"),
-  );
-  el("clear").addEventListener("click", () => {
-    if (busy) {
-      notify("Wait for the current request to finish before clearing.", true);
-      return;
-    }
-    for (const k of fields) el(k).value = "";
-    el("preview").value = "";
-    answer = "";
-    dirty = false;
-    el("empty").hidden = false;
-    el("answer").hidden = true;
-    show("brief");
-    el("draft-state").textContent = "Workspace cleared.";
-    el("answer").textContent = "Workspace cleared.";
-    el("result-meta").textContent = "No saved response.";
-    el("copy").disabled = true;
-    el("download").disabled = true;
-    update();
-  });
-  apply();
-  return refresh();
+  refresh();
 }

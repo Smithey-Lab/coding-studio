@@ -10,7 +10,7 @@ The browser receives no provider key. A retained Secrets Manager secret starts w
 
 One DynamoDB transaction checks the current user and enabled-policy revisions, reserves daily/monthly/lifetime allowance, rejects replayed request IDs, and acquires a one-minute global lease. Reservations are not refunded. Replay records and budget counters deliberately have no TTL; quotas must not reset through asynchronous deletion or account quota resets. Requests admitted before pausing may finish. Failures remain charged to the internal allowance even when the provider did not bill.
 
-Input is limited to 16,000 UTF-8 bytes plus a fixed system prompt, output to 4,096 tokens, response body to 256 KB, and provider time to 20 seconds. A network abort does not guarantee provider cancellation. Responses render through textContent and never execute as HTML or code. The host must serve a restrictive CSP and HTTPS.
+Conversation input is limited to 21 alternating user/assistant messages and a combined 16,000 UTF-8 bytes plus a fixed system prompt. Client system/tool roles are rejected and extra message fields are discarded. Legacy single-prompt requests remain supported. Output is limited to 4,096 tokens, response body to 256 KB, and provider time to 20 seconds. A network abort does not guarantee provider cancellation. Responses render through textContent and never execute as HTML or code. The host must serve a restrictive CSP and HTTPS.
 
 ## Limits of the protection
 
