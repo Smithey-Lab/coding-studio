@@ -1,6 +1,6 @@
 # Coding Studio · Smithey Lab
 
-An owner-only DeepSeek coding workspace: structured prompt builder, five task templates, editable final prompt, output/creativity controls, JSON template import/export, text-safe responses, copy/download, allowance display, and emergency pause.
+An owner-only DeepSeek chat workspace: multi-turn conversations, a message composer, coding starters, copyable code blocks, Markdown export, response controls, allowance display, and emergency pause. This is a lightweight custom chat interface, not an installation of OpenCode.
 
 **Production:** [Smithey Lab Coding Studio](https://smitheylab.com/app/coding-studio/) requires the site owner's login and authenticator MFA. Public source does not grant access to the production API. This repository contains the reusable feature module; the existing Smithey Lab host supplies authentication, navigation, and AWS deployment.
 
@@ -59,4 +59,4 @@ These are conservative **internal reservations**, not actual invoices. At the [D
 
 ## Privacy and limitations
 
-Prompts and results are kept only in page memory until navigation/reload/clear, except files explicitly exported by the user. Submitting sends the final prompt to DeepSeek. Generated code is never executed. This is a request/response assistant, not an autonomous agent with repository or terminal access. A 20-second timeout can truncate a long-running provider request; failed or ambiguous attempts remain reserved. Live provider behavior must be verified after key setup.
+Prompts and results are kept only in page memory until navigation/reload/new chat, except files explicitly exported by the user. Each submission sends the conversation so far plus the new message to DeepSeek. The complete input is limited to 16,000 UTF-8 bytes and 21 alternating messages; the UI asks you to start a new chat when that limit is reached. Context is never silently dropped. Generated code is never executed. This is a request/response assistant, not an autonomous agent with repository or terminal access. A 20-second timeout can interrupt a long-running provider request; failed or ambiguous attempts remain reserved. Live provider behavior must be verified after key setup.

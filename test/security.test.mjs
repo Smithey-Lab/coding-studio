@@ -6,7 +6,6 @@ import {
   reservation,
   validateRequest,
 } from "../backend/studio.mjs";
-import { composePrompt } from "../web/studio.js";
 const env = {
   MEMBER_TABLE: "table",
   STUDIO_OWNER_SUB: "owner",
@@ -222,15 +221,5 @@ test("reservation atomically checks policy, owner, three limits, replay and glob
   assert.equal(
     tx[0].ConditionCheck.ExpressionAttributeValues[":owner"],
     "owner",
-  );
-});
-test("prompt builder gives source code an explicit context section", () => {
-  assert.equal(
-    composePrompt({
-      goal: " fix ",
-      context: "<script>x</script>",
-      output: "tests",
-    }),
-    "## Goal\nfix\n\n## Context / source code\n<script>x</script>\n\n## Expected response\ntests",
   );
 });
