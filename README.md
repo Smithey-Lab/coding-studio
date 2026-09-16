@@ -1,6 +1,8 @@
 # Coding Studio · Smithey Lab
 
-An owner-only DeepSeek chat workspace: multi-turn conversations, a message composer, coding starters, copyable code blocks, Markdown export, response controls, allowance display, and emergency pause. This is a lightweight custom chat interface, not an installation of OpenCode.
+An owner-only DeepSeek chat workspace: up to 20 in-memory conversations with separate drafts, conversation search/rename/delete, text-file attachments, validated JSON import/export, Markdown export, safe headings/lists/code formatting, response controls, allowance display, and emergency pause. This is a lightweight custom chat interface, not an installation of OpenCode.
+
+Use **Conversations** to switch chats without losing drafts. **Export JSON** saves a conversation and its unsent draft/attachment for later import; **Export Markdown** produces a readable transcript. Attachments accept small UTF-8 text/code files up to 16,000 bytes and share the existing context limit. Export before leaving or reloading: nothing is persisted automatically. Long replies are preserved in full, even if they make the conversation too large for another request. New chats and imports share the same cooldown; they never reset server allowances.
 
 **Production:** [Smithey Lab Coding Studio](https://smitheylab.com/app/coding-studio/) requires the site owner's login and authenticator MFA. Public source does not grant access to the production API. This repository contains the reusable feature module; the existing Smithey Lab host supplies authentication, navigation, and AWS deployment.
 

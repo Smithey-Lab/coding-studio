@@ -18,6 +18,8 @@ The internal dollar allowance is a conservative reservation, not a guaranteed pr
 
 The frontend has no persistent draft or response storage. Exported files contain the user's prompt/code or response and are intentionally plaintext on their device. There are no application logs of prompts, responses, or keys.
 
+Conversation imports are bounded to 1 MiB JSON, 22 alternating stored messages, and validated message/attachment fields. Imported roles cannot include system or tool messages. Up to 20 conversations are held in memory. Attachments are read only after a file-size check and rejected if binary or invalid UTF-8 text. Their filename, delimiters, and contents count toward the input limit. Markdown creates DOM text nodes, headings, lists, and code blocks without evaluating HTML, loading images, or activating links. Replies larger than the formatting threshold are displayed as complete plain text. Switching/importing/deleting conversations is blocked during a request. Importing a chat never sends it automatically.
+
 ## Emergency stop
 
 Use Pause API in the authenticated Coding Studio. To recover without the browser, set the `SETTINGS` / `studio` record's `enabled` to false and increment `revision` in the member table. Revoke the dedicated key at DeepSeek if compromise is suspected. Do not rely on deleting a CloudFormation stack: the secret and member table are retained.
