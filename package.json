@@ -12,14 +12,14 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@aws-sdk/client-secrets-manager": "3.1131.0",
-    "@aws-sdk/lib-dynamodb": "3.1131.0"
+    "@aws-sdk/client-secrets-manager": "3.1136.0",
+    "@aws-sdk/lib-dynamodb": "3.1146.0"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "eslint": "10.10.0",
-    "globals": "17.4.0",
+    "eslint": "10.11.0",
+    "globals": "17.13.0",
     "playwright-core": "1.63.0",
-    "prettier": "3.9.6"
+    "prettier": "3.9.9"
   }
 }
