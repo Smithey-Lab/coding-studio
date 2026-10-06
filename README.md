@@ -1,6 +1,8 @@
 # Coding Studio · Smithey Lab
 
-An owner-only DeepSeek coding workspace: structured prompt builder, five task templates, editable final prompt, output/creativity controls, JSON template import/export, text-safe responses, copy/download, allowance display, and emergency pause.
+An owner-only DeepSeek chat workspace: up to 20 in-memory conversations with separate drafts, conversation search/rename/delete, text-file attachments, validated JSON import/export, Markdown export, safe headings/lists/code formatting, response controls, allowance display, and emergency pause. This is a lightweight custom chat interface, not an installation of OpenCode.
+
+Use **Conversations** to switch chats without losing drafts. **Export JSON** saves a conversation and its unsent draft/attachment for later import; **Export Markdown** produces a readable transcript. Attachments accept small UTF-8 text/code files up to 16,000 bytes and share the existing context limit. Export before leaving or reloading: nothing is persisted automatically. Long replies are preserved in full, even if they make the conversation too large for another request. New chats and imports share the same cooldown; they never reset server allowances.
 
 **Production:** [Smithey Lab Coding Studio](https://smitheylab.com/app/coding-studio/) requires the site owner's login and authenticator MFA. Public source does not grant access to the production API. This repository contains the reusable feature module; the existing Smithey Lab host supplies authentication, navigation, and AWS deployment.
 
@@ -59,4 +61,4 @@ These are conservative **internal reservations**, not actual invoices. At the [D
 
 ## Privacy and limitations
 
-Prompts and results are kept only in page memory until navigation/reload/clear, except files explicitly exported by the user. Submitting sends the final prompt to DeepSeek. Generated code is never executed. This is a request/response assistant, not an autonomous agent with repository or terminal access. A 20-second timeout can truncate a long-running provider request; failed or ambiguous attempts remain reserved. Live provider behavior must be verified after key setup.
+Prompts and results are kept only in page memory until navigation/reload/new chat, except files explicitly exported by the user. Each submission sends the conversation so far plus the new message to DeepSeek. The complete input is limited to 16,000 UTF-8 bytes and 21 alternating messages; the UI asks you to start a new chat when that limit is reached. Context is never silently dropped. Generated code is never executed. This is a request/response assistant, not an autonomous agent with repository or terminal access. A 20-second timeout can interrupt a long-running provider request; failed or ambiguous attempts remain reserved. Live provider behavior must be verified after key setup.
